@@ -1,4 +1,4 @@
-module github.com/testifysec/witness-gatekeeper-provider
+module github.com/testifysec/archivista-gatekeeper-provider
 
 go 1.20
 
@@ -7,6 +7,11 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/regclient/regclient v0.5.0
 	github.com/testifysec/go-witness v0.1.16
+)
+
+require (
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 )
 
 require (
@@ -46,6 +51,7 @@ require (
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
+	github.com/spf13/cobra v1.7.0
 	github.com/tchap/go-patricia/v2 v2.3.1 // indirect
 	github.com/testifysec/archivista-api v0.0.0-20230220215059-632b84b82b76 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
