@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/testifysec/archivista-gatekeeper-provider/gatekeeper"
+	"github.com/testifysec/archivista-data-provider/gatekeeper"
 	"github.com/testifysec/go-witness"
 	"github.com/testifysec/go-witness/archivista"
 	"github.com/testifysec/go-witness/cryptoutil"

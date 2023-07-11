@@ -1,4 +1,4 @@
-package httpHandlers
+package handlers
 
 import (
 	"encoding/json"
@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
-	"github.com/testifysec/archivista-gatekeeper-provider/gatekeeper"
-	"github.com/testifysec/archivista-gatekeeper-provider/helpers"
+	"github.com/testifysec/archivista-data-provider/gatekeeper"
+	"github.com/testifysec/archivista-data-provider/helpers"
 	"github.com/testifysec/go-witness/archivista"
 )
 
