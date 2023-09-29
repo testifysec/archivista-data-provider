@@ -1,0 +1,102 @@
+name: build_test
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - "**.md"
+    branches:
+      - main
+  pull_request:
+    paths-ignore:
+      - "**.md"
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: "Lint"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+
+      - name: Set up Go 1.19
+        uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
+        with:
+          go-version: 1.19
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+
+      # source: https://github.com/golangci/golangci-lint-action
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@3a919529898de77ec3da873e3063ca4b10e7f5cc # v3.7.0
+        with:
+          version: v1.50.0
+
+  helm_build_test:
+    name: "[Helm] Build and Test"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+
+      - name: Set up Go 1.19
+        uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
+        with:
+          go-version: 1.19
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+
+      - name: Bootstrap e2e
+        env:
+          KIND_VERSION: 0.17.0
+          BATS_VERSION: 1.8.2
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/bin
+          echo "${GITHUB_WORKSPACE}/bin" >> $GITHUB_PATH
+          GOBIN="${GITHUB_WORKSPACE}/bin" go install sigs.k8s.io/kind@v${KIND_VERSION}
+          curl -sSLO https://github.com/bats-core/bats-core/archive/v${BATS_VERSION}.tar.gz && tar -zxvf v${BATS_VERSION}.tar.gz && bash bats-core-${BATS_VERSION}/install.sh ${GITHUB_WORKSPACE}
+
+      - name: Create a kind cluster and install Gatekeeper
+        env:
+          GATEKEEPER_VERSION: 3.11.0
+          KUBERNETES_VERSION: 1.26.0
+        run: |
+          kind create cluster --image kindest/node:v${KUBERNETES_VERSION} --name gatekeeper
+
+          helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
+          helm install gatekeeper/gatekeeper \
+            --version ${GATEKEEPER_VERSION} \
+            --set enableExternalData=true \
+            --name-template=gatekeeper \
+            --namespace gatekeeper-system \
+            --create-namespace \
+            --debug
+
+      - name: Build and install archivista-data-provider
+        run: |
+          ./scripts/generate-tls-cert.sh
+          make docker-buildx kind-load-image
+          helm install archivista-data-provider charts/archivista-data-provider \
+            --set provider.tls.caBundle="$(cat certs/ca.crt | base64 | tr -d '\n\r')" \
+            --namespace gatekeeper-system \
+            --wait --debug
+
+      - name: Run e2e
+        run: |
+          bats -t test/bats/test.bats
