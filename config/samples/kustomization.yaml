@@ -1,0 +1,5 @@
+## Append samples of your project ##
+resources:
+- witness_v1alpha1_policy.yaml
+- witness_v1alpha1_policypublickey.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples
