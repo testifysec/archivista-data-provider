@@ -1,6 +1,8 @@
 module github.com/testifysec/archivista-data-provider
 
-go 1.18
+go 1.21
+
+toolchain go1.21.3
 
 require (
 	github.com/onsi/ginkgo/v2 v2.11.0
