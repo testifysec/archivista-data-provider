@@ -1,0 +1,8 @@
+certDir: /certs
+clientCAFile: /tmp/gatekeeper/ca.crt
+port: 8090
+provider:
+  # TODO: Fix timeout
+  timeout: 300
+  tls:
+    caBundle: ""
