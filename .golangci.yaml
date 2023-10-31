@@ -15,7 +15,37 @@ linters-settings:
     locale: US
   staticcheck:
     # Select the Go version to target. The default is '1.13'.
-    go: "1.19"
+    go: "1.21"
+
+  revive:
+    enable-all-rules: true
+    rules:
+      - name: dot-imports
+        disabled: true
+      - name: line-length-limit
+        disabled: true
+      - name: add-constant
+        disabled: true
+      - name: cognitive-complexity
+        disabled: true
+      - name: import-alias-naming
+        disabled: true
+      - name: early-return
+        disabled: true
+      - name: cyclomatic
+        disabled: true
+      - name: deep-exit
+        disabled: true
+      - name: unhandled-error
+        disabled: true
+      - name: import-shadowing
+        disabled: true
+      - name: function-length
+        disabled: true
+      - name: comment-spacings
+        disabled: true
+      - name: struct-tag
+        disabled: true
 
 linters:
   disable-all: true
