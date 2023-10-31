@@ -1,0 +1,58 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: adp-manager-role
+rules:
+- apiGroups:
+  - witness.testifysec.com
+  resources:
+  - policies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - witness.testifysec.com
+  resources:
+  - policies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - witness.testifysec.com
+  resources:
+  - policies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - witness.testifysec.com
+  resources:
+  - policypublickeys
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - witness.testifysec.com
+  resources:
+  - policypublickeys/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - witness.testifysec.com
+  resources:
+  - policypublickeys/status
+  verbs:
+  - get
+  - patch
+  - update
