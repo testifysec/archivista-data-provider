@@ -148,11 +148,7 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 				subject := cryptoutil.DigestSet{cryptoutil.DigestValue{Hash: crypto.SHA256, GitOID: false}: digest}
 				subjects := []cryptoutil.DigestSet{subject}
 
-				var collectionSource source.Sourcer
-				memSource := source.NewMemorySource()
-
-				collectionSource = source.NewMultiSource(memSource, source.NewArchvistSource(vh.archivista))
-
+				collectionSource := source.NewArchvistSource(vh.archivista)
 				fmt.Printf("Verifying policy %s\n", policyName)
 				fmt.Printf("Verifying policy %v\n", policyEnv)
 				fmt.Printf("Verifying subjects %s\n", digest)
@@ -163,7 +159,7 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 				logger.Out = os.Stdout
 				log.SetLogger(logger)
 
-				verifiedEvidence, err := witness.Verify(
+				verifyResult, err := witness.Verify(
 					req.Context(),
 					policyEnv,
 					[]cryptoutil.Verifier{verifier},
@@ -181,14 +177,10 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 
 				klog.Info("Verification succeeded")
 				klog.Info("Evidence:")
-				num := 0
 				var uris []string
-				for _, stepEvidence := range verifiedEvidence {
-					for i := range stepEvidence {
-						klog.Info(fmt.Sprintf("%d: %s", num, stepEvidence[i].Reference))
-						uris = append(uris, stepEvidence[i].Reference)
-						num++
-					}
+				for i, stepEvidence := range verifyResult.VerificationSummary.InputAttestations {
+					klog.Info(fmt.Sprintf("%d: %s", i, stepEvidence.URI))
+					uris = append(uris, stepEvidence.URI)
 				}
 
 				policyResults = append(policyResults, externaldata.Item{

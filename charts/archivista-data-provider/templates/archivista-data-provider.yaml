@@ -1,0 +1,8 @@
+apiVersion: externaldata.gatekeeper.sh/v1beta1
+kind: Provider
+metadata:
+  name: archivista-data-provider
+spec:
+  url: https://archivista-data-provider.{{ .Release.Namespace }}:{{ .Values.port }}
+  timeout: {{ .Values.provider.timeout }}
+  caBundle: {{ required "You must provide .Values.provider.tls.caBundle" .Values.provider.tls.caBundle }}

@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: archivista-data-provider
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: archivista-data-provider
+  template:
+    metadata:
+      labels:
+        run: archivista-data-provider
+    spec:
+      containers:
+      - image: {{ .Values.image | default "testifysec/archivista-data-provider:dev" }}
+        imagePullPolicy: IfNotPresent
+        name: archivista-data-provider
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 65532
+          runAsNonRoot: true
+          runAsUser: 65532
+          seccompProfile:
+            type: RuntimeDefault
+        args:
+        - --cert-dir={{ .Values.certDir }}
+        {{- if .Values.clientCAFile }}
+        - --client-ca-file={{ .Values.clientCAFile }}
+        {{- end }}
+        - --port={{ .Values.port }}
+        ports:
+        - containerPort: {{ .Values.port }}
+          protocol: TCP
+        {{- if .Values.clientCAFile }}
+        volumeMounts:
+        - name: gatekeeper-ca-cert
+          mountPath: /tmp/gatekeeper
+          readOnly: true
+        {{- end }}
+      restartPolicy: Always
+      serviceAccountName: archivista-data-provider
+      nodeSelector:
+        kubernetes.io/os: linux
+      {{- if .Values.clientCAFile }}
+      volumes:
+      - name: gatekeeper-ca-cert
+        secret:
+          secretName: gatekeeper-webhook-server-cert
+          items:
+          - key: ca.crt
+            path: ca.crt
+      {{- end }}

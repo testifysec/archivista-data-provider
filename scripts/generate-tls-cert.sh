@@ -4,9 +4,10 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-REPO_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
+REPO_ROOT="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/.."
 cd "${REPO_ROOT}" || exit 1
 NAMESPACE=${NAMESPACE:-gatekeeper-system}
+echo ${REPO_ROOT}
 
 generate() {
     # generate CA key and certificate

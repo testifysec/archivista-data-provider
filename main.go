@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -27,9 +28,10 @@ const (
 )
 
 var (
-	certDir      string
-	clientCAFile string
-	port         int
+	certDir       string
+	clientCAFile  string
+	archivistaUrl string
+	port          int
 )
 
 func init() {
@@ -37,11 +39,17 @@ func init() {
 	flag.StringVar(&certDir, "cert-dir", "", "path to directory containing TLS certificates")
 	flag.StringVar(&clientCAFile, "client-ca-file", "", "path to client CA certificate")
 	flag.IntVar(&port, "port", defaultPort, "Port for the server to listen on")
+	flag.StringVar(&archivistaUrl, "archivista-url", "https://archivista.testifysec.io", "url to the archivista instance to query")
 	flag.Parse()
 }
 
 func main() {
-	ac := archivista.New("https://archivista.testifysec.io")
+	if _, err := url.ParseRequestURI(archivistaUrl); err != nil {
+		klog.ErrorS(err, "invalid archivista url", "archivista-url", archivistaUrl)
+		os.Exit(1)
+	}
+
+	ac := archivista.New(archivistaUrl)
 	vh := handler.NewValidateHandler(ac)
 
 	mux := http.NewServeMux()

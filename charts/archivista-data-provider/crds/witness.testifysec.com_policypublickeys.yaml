@@ -1,0 +1,64 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  name: policypublickeys.witness.testifysec.com
+spec:
+  group: witness.testifysec.com
+  names:
+    kind: PolicyPublicKey
+    listKind: PolicyPublicKeyList
+    plural: policypublickeys
+    singular: policypublickey
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: The state of the publickey
+      jsonPath: .status.state
+      name: State
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: PolicyPublicKey is the Schema for the policypublickeys API.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PolicyPublicKeySpec defines the desired state of PolicyPublicKey.
+            properties:
+              public_key:
+                description: A base64 encoded public key used to verify Witness Policies.
+                format: byte
+                type: string
+            required:
+            - public_key
+            type: object
+          status:
+            description: PolicyPublicKeyStatus defines the observed state of PolicyPublicKey.
+            properties:
+              state:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                type: string
+            required:
+            - state
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
