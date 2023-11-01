@@ -22,6 +22,7 @@ import (
 	shareddata "github.com/testifysec/archivista-data-provider/internal/shared_data"
 	"github.com/testifysec/go-witness"
 	"github.com/testifysec/go-witness/archivista"
+	"github.com/testifysec/go-witness/attestation"
 
 	// Work around for initialization of attestation plugins.
 	_ "github.com/testifysec/go-witness/attestation/material"
@@ -89,8 +90,9 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 		manifest, err := rc.ManifestGet(req.Context(), image)
 		if err != nil {
 			utils.SendResponse(nil, fmt.Sprintf("unable to get manifest for image %s: %v", rKey, err), w)
-			continue
+			return
 		}
+
 		if manifest.IsList() {
 			klog.Info("Multi-platform image detected, looking up digest for current platform")
 			plat := platform.Platform{
@@ -101,7 +103,7 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 			desc, err := rcManifest.GetPlatformDesc(manifest, &plat)
 			if err != nil {
 				utils.SendResponse(nil, fmt.Sprintf("unable to get platform description for image %s: %v", rKey, err), w)
-				continue
+				return
 			}
 
 			digest = desc.Digest.String()
@@ -109,7 +111,7 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 			config, err := manifest.(rcManifest.Imager).GetConfig()
 			if err != nil {
 				utils.SendResponse(nil, fmt.Sprintf("unable to get config digest for image %s: %v", rKey, err), w)
-				continue
+				return
 			}
 			klog.Info("Using config digest")
 			digest = config.Digest.String()
@@ -165,6 +167,7 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 					[]cryptoutil.Verifier{verifier},
 					witness.VerifyWithSubjectDigests(subjects),
 					witness.VerifyWithCollectionSource(collectionSource),
+					witness.VerifyWithRunOptions(witness.RunWithAttestors([]attestation.Attestor{})),
 				)
 				if err != nil {
 					klog.Error(err, "failed to verify policy", "name", policyName)

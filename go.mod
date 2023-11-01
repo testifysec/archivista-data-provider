@@ -136,4 +136,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/testifysec/go-witness => github.com/testifysec/go-witness v0.1.18-0.20231027071137-ab4f36cf6860
+replace github.com/testifysec/go-witness => github.com/testifysec/go-witness v0.1.18-0.20231031193634-710ff19c806f

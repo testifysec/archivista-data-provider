@@ -1,4 +1,4 @@
-REPOSITORY ?= jkjell/archivista-data-provider
+REPOSITORY ?= testifysec/archivista-data-provider
 IMG := $(REPOSITORY):dev
 
 # When updating this, make sure to update the corresponding action in
