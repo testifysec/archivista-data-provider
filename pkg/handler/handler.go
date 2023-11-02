@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"encoding/json"
 	"fmt"
@@ -9,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"runtime"
-	"strconv"
 	"strings"
 
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
@@ -22,7 +22,6 @@ import (
 	shareddata "github.com/testifysec/archivista-data-provider/internal/shared_data"
 	"github.com/testifysec/go-witness"
 	"github.com/testifysec/go-witness/archivista"
-	"github.com/testifysec/go-witness/attestation"
 
 	// Work around for initialization of attestation plugins.
 	_ "github.com/testifysec/go-witness/attestation/material"
@@ -37,11 +36,13 @@ import (
 
 type ValidateHandler struct {
 	archivista *archivista.Client
+	signer     cryptoutil.Signer
 }
 
-func NewValidateHandler(archivista *archivista.Client) *ValidateHandler {
+func NewValidateHandler(archivista *archivista.Client, signer cryptoutil.Signer) *ValidateHandler {
 	return &ValidateHandler{
 		archivista: archivista,
+		signer:     signer,
 	}
 }
 
@@ -90,9 +91,8 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 		manifest, err := rc.ManifestGet(req.Context(), image)
 		if err != nil {
 			utils.SendResponse(nil, fmt.Sprintf("unable to get manifest for image %s: %v", rKey, err), w)
-			return
+			continue
 		}
-
 		if manifest.IsList() {
 			klog.Info("Multi-platform image detected, looking up digest for current platform")
 			plat := platform.Platform{
@@ -103,7 +103,7 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 			desc, err := rcManifest.GetPlatformDesc(manifest, &plat)
 			if err != nil {
 				utils.SendResponse(nil, fmt.Sprintf("unable to get platform description for image %s: %v", rKey, err), w)
-				return
+				continue
 			}
 
 			digest = desc.Digest.String()
@@ -111,15 +111,16 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 			config, err := manifest.(rcManifest.Imager).GetConfig()
 			if err != nil {
 				utils.SendResponse(nil, fmt.Sprintf("unable to get config digest for image %s: %v", rKey, err), w)
-				return
+				continue
 			}
 			klog.Info("Using config digest")
 			digest = config.Digest.String()
 		}
 
 		digest = strings.TrimPrefix(digest, "sha256:")
-		klog.Info("Using resolved digest ", "digest", digest)
+		klog.InfoS("Using resolved digest ", "digest", digest)
 
+		signedVSAs := make([]dsse.Envelope, 0)
 		// Do verify
 		results := shareddata.UsePoliciesAndPublicKeys(func(policies map[string]dsse.Envelope, keys map[string]policy.PublicKey) (results *[]externaldata.Item) {
 			policyResults := make([]externaldata.Item, 0)
@@ -152,7 +153,6 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 
 				collectionSource := source.NewArchvistSource(vh.archivista)
 				fmt.Printf("Verifying policy %s\n", policyName)
-				fmt.Printf("Verifying policy %v\n", policyEnv)
 				fmt.Printf("Verifying subjects %s\n", digest)
 				fmt.Printf("Verifying collection source %v\n", collectionSource)
 				fmt.Printf("Verifying archivista %v\n", *vh.archivista)
@@ -167,7 +167,7 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 					[]cryptoutil.Verifier{verifier},
 					witness.VerifyWithSubjectDigests(subjects),
 					witness.VerifyWithCollectionSource(collectionSource),
-					witness.VerifyWithRunOptions(witness.RunWithAttestors([]attestation.Attestor{})),
+					witness.VerifyWithSigners(vh.signer),
 				)
 				if err != nil {
 					klog.Error(err, "failed to verify policy", "name", policyName)
@@ -192,14 +192,26 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 						"PolicyName": policyName,
 						"ImageID":    digest,
 						"URIs":       strings.Join(uris, ""),
-						"Passed":     strconv.FormatBool(true),
+						"Result":     string(verifyResult.VerificationSummary.VerificationResult),
 					},
 				})
+
+				signedVSAs = append(signedVSAs, verifyResult.SignedEnvelope)
 			}
 
 			return &policyResults
 		})
 
 		utils.SendResponse(results, "", w)
+
+		for _, vsaEnv := range signedVSAs {
+			gitoid, err := vh.archivista.Store(context.Background(), vsaEnv)
+			if err != nil {
+				klog.ErrorS(err, "failed to store vsa envelope", "envelope", vsaEnv)
+				continue
+			}
+
+			klog.InfoS("stored vsa envelope to archivista", "gitoid", gitoid)
+		}
 	}
 }

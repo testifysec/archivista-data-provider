@@ -35,5 +35,5 @@ spec:
         response_with_error(response) {
           count(response.responses) > 0
           resp := response.responses[_]
-          "false" == resp[1].Passed
+          "PASSED" != resp[1].Result
         }

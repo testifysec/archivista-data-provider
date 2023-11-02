@@ -1,0 +1,12 @@
+apiVersion: witness.testifysec.com/v1alpha1
+kind: PolicyPublicKey
+metadata:
+  labels:
+    app.kubernetes.io/name: policypublickey
+    app.kubernetes.io/instance: policypublickey-sample
+    app.kubernetes.io/part-of: archivista-data-provider
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: archivista-data-provider
+  name: swfpolicypubkey
+spec:
+  public_key: ewogICJrZXlpZCI6ICIzYzdkZDBlMmE3Y2Y0OWZlNmM0M2MxMTI0ZWNmMmNlY2U4Y2ExOTZkMGU3ZTM5MTRmYjZhYzg2YzA3ZWMyODVkIiwKICAia2V5IjogIkxTMHRMUzFDUlVkSlRpQlFWVUpNU1VNZ1MwVlpMUzB0TFMwS1RVTnZkMEpSV1VSTE1sWjNRWGxGUVd4SVFtSXdSaTg0VnpSVFpsSjFNbnBHVFU4MksyOVVRbVo0UTFWSWRIcHhXRTV6TVdVNFMxSmhkVzg5Q2kwdExTMHRSVTVFSUZCVlFreEpReUJMUlZrdExTMHRMUW89Igp9Cg==

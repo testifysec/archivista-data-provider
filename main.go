@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"github.com/testifysec/archivista-data-provider/pkg/handler"
 	"github.com/testifysec/archivista-data-provider/pkg/manager"
 	"github.com/testifysec/go-witness/archivista"
+	"github.com/testifysec/go-witness/cryptoutil"
 
 	"k8s.io/klog/v2"
 )
@@ -50,7 +52,13 @@ func main() {
 	}
 
 	ac := archivista.New(archivistaUrl)
-	vh := handler.NewValidateHandler(ac)
+	signer, err := loadSigner(filepath.Join(certDir, keyName), filepath.Join(certDir, certName))
+	if err != nil {
+		klog.ErrorS(err, "failed to load signer")
+		os.Exit(1)
+	}
+
+	vh := handler.NewValidateHandler(ac, signer)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", vh.Handler)
@@ -96,4 +104,30 @@ func main() {
 		klog.Error("TLS certificates are not provided, the server will not be started")
 		os.Exit(1)
 	}
+}
+
+func loadSigner(keyFilePath, certFilePath string) (cryptoutil.Signer, error) {
+	keyFile, err := os.Open(keyFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load key: %w", err)
+	}
+
+	defer keyFile.Close()
+	certFile, err := os.Open(certFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load cert: %w", err)
+	}
+
+	certBytes, err := io.ReadAll(certFile)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't read cert: %w", err)
+	}
+
+	cert, err := cryptoutil.TryParseCertificate(certBytes)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse cert: %w", err)
+	}
+
+	defer certFile.Close()
+	return cryptoutil.NewSignerFromReader(keyFile, cryptoutil.SignWithCertificate(cert))
 }
