@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"runtime"
 	"strings"
 
@@ -18,7 +17,6 @@ import (
 	rcManifest "github.com/regclient/regclient/types/manifest"
 	"github.com/regclient/regclient/types/platform"
 	"github.com/regclient/regclient/types/ref"
-	"github.com/sirupsen/logrus"
 	shareddata "github.com/testifysec/archivista-data-provider/internal/shared_data"
 	"github.com/testifysec/go-witness"
 	"github.com/testifysec/go-witness/archivista"
@@ -157,9 +155,7 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 				fmt.Printf("Verifying collection source %v\n", collectionSource)
 				fmt.Printf("Verifying archivista %v\n", *vh.archivista)
 
-				logger := logrus.New()
-				logger.Out = os.Stdout
-				log.SetLogger(logger)
+				log.SetLogger(klogLogger{})
 
 				verifyResult, err := witness.Verify(
 					req.Context(),
@@ -214,4 +210,38 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 			klog.InfoS("stored vsa envelope to archivista", "gitoid", gitoid)
 		}
 	}
+}
+
+type klogLogger struct{}
+
+func (k klogLogger) Errorf(format string, args ...interface{}) {
+	klog.Errorf(format, args...)
+}
+
+func (k klogLogger) Error(args ...interface{}) {
+	klog.Error(args...)
+}
+
+func (k klogLogger) Warnf(format string, args ...interface{}) {
+	klog.Warningf(format, args...)
+}
+
+func (k klogLogger) Warn(args ...interface{}) {
+	klog.Warning(args...)
+}
+
+func (k klogLogger) Debugf(format string, args ...interface{}) {
+	klog.Infof(format, args...)
+}
+
+func (k klogLogger) Debug(args ...interface{}) {
+	klog.Info(args...)
+}
+
+func (k klogLogger) Infof(format string, args ...interface{}) {
+	klog.Infof(format, args...)
+}
+
+func (k klogLogger) Info(args ...interface{}) {
+	klog.Info(args...)
 }

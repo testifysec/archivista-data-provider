@@ -6,7 +6,6 @@ require (
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.10
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20221214024800-b745745c4118
-	github.com/sirupsen/logrus v1.9.3
 	github.com/testifysec/go-witness v0.1.17
 	k8s.io/apimachinery v0.28.2
 	k8s.io/client-go v0.28.2
@@ -48,6 +47,7 @@ require (
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/sigstore/fulcio v1.1.0 // indirect
 	github.com/sigstore/sigstore v1.5.1 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.1.2 // indirect
@@ -136,4 +136,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/testifysec/go-witness => github.com/testifysec/go-witness v0.1.18-0.20231102053541-57ecdaf1a18c
+replace github.com/testifysec/go-witness => github.com/testifysec/go-witness v0.1.18-0.20231104051132-ab3ab2819a44
