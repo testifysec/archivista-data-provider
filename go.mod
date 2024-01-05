@@ -22,7 +22,7 @@ require (
 	github.com/acomagu/bufpipe v1.0.3 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/aws/aws-sdk-go v1.44.207 // indirect
-	github.com/cloudflare/circl v1.3.2 // indirect
+	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/coreos/go-oidc/v3 v3.5.0 // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20230220124406-51331ccfc40f // indirect
 	github.com/digitorus/timestamp v0.0.0-20230220124323-d542479a2425 // indirect
