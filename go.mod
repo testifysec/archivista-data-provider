@@ -4,7 +4,7 @@ go 1.21
 
 toolchain go1.21.3
 
-replace github.com/in-toto/go-witness => ../go-witness
+replace github.com/in-toto/go-witness => github.com/chaosinthecrd/go-witness v0.0.0-20240314215225-57933c0566c6
 
 require (
 	github.com/in-toto/go-witness v0.3.1
@@ -43,6 +43,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.23.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.1 // indirect
 	github.com/aws/smithy-go v1.20.1 // indirect
+	github.com/cilium/tetragon v0.8.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/coreos/go-oidc/v3 v3.9.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
