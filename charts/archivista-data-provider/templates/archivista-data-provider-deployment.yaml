@@ -14,8 +14,8 @@ spec:
         run: archivista-data-provider
     spec:
       containers:
-      - image: jkjell/archivista-data-provider:dev
-        imagePullPolicy: IfNotPresent
+      - image: {{ .Values.image }}
+        imagePullPolicy: Always
         name: archivista-data-provider
         securityContext:
           allowPrivilegeEscalation: false

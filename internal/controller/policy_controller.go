@@ -26,10 +26,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/in-toto/go-witness/dsse"
+	witnessPolicy "github.com/in-toto/go-witness/policy"
 	witnessv1alpha1 "github.com/testifysec/archivista-data-provider/api/v1alpha1"
 	shareddata "github.com/testifysec/archivista-data-provider/internal/shared_data"
-	"github.com/testifysec/go-witness/dsse"
-	witnessPolicy "github.com/testifysec/go-witness/policy"
 )
 
 // PolicyReconciler reconciles a Policy object.

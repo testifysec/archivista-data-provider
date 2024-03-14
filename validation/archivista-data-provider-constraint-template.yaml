@@ -12,24 +12,32 @@ spec:
       rego: |
         package k8sexternaldata
 
-        violation[{"msg": msg}] {
-          # build a list of keys containing images
+        remote_data := response {
           images := [img | img = input.review.object.spec.containers[_].image]
-
-          # send external data request
           response := external_data({"provider": "archivista-data-provider", "keys": images})
-
-          response_with_error(response)
-
-          msg := sprintf("invalid response: %v", [response])
         }
 
-        response_with_error(response) {
-          count(response.errors) > 0
-          errs := response.errors[_]
-          contains(errs[1], "_invalid")
+        # Base Gatekeeper violation
+        violation[{"msg": msg}] {
+          general_violation[{"result": msg}]
         }
 
-        response_with_error(response) {
-          count(response.system_error) > 0
+        # Check if there are any system errors
+        general_violation[{"result": result}] {
+          err := remote_data.system_error
+          err != ""
+          result := sprintf("System error calling external data provider: %s", [err])
+        }
+
+        # Check if there are errors for any of the images
+        general_violation[{"result": result}] {
+          count(remote_data.errors) > 0
+          result := sprintf("Error validating one or more images: %s", remote_data.errors)
+        }
+
+        # Check if the success criteria is true
+        general_violation[{"result": result}] {
+          subject_validation := remote_data.responses[_]
+          subject_validation[1].Passed == "false"
+          result := sprintf("\nImage %s failed as it violates policy %s: \n%s", [subject_validation[0], subject_validation[1].PolicyName, subject_validation[1].Reasons])
         }

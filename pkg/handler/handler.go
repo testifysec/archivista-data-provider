@@ -12,6 +12,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/in-toto/go-witness"
+	"github.com/in-toto/go-witness/archivista"
+	"github.com/in-toto/go-witness/signer/kms"
+	_ "github.com/in-toto/go-witness/signer/kms/aws"
+	_ "github.com/in-toto/go-witness/signer/kms/gcp"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 	"github.com/open-policy-agent/gatekeeper-external-data-provider/pkg/utils"
 	"github.com/regclient/regclient"
@@ -20,17 +25,15 @@ import (
 	"github.com/regclient/regclient/types/ref"
 	"github.com/sirupsen/logrus"
 	shareddata "github.com/testifysec/archivista-data-provider/internal/shared_data"
-	"github.com/testifysec/go-witness"
-	"github.com/testifysec/go-witness/archivista"
 
 	// Work around for initialization of attestation plugins.
-	_ "github.com/testifysec/go-witness/attestation/material"
-	_ "github.com/testifysec/go-witness/attestation/product"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/dsse"
-	"github.com/testifysec/go-witness/log"
-	"github.com/testifysec/go-witness/policy"
-	"github.com/testifysec/go-witness/source"
+	_ "github.com/in-toto/go-witness/attestation/material"
+	_ "github.com/in-toto/go-witness/attestation/product"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/dsse"
+	"github.com/in-toto/go-witness/log"
+	"github.com/in-toto/go-witness/policy"
+	"github.com/in-toto/go-witness/source"
 	"k8s.io/klog/v2"
 )
 
@@ -80,43 +83,47 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		if image.Digest == "" {
-			klog.Warning("Image with tag was used, this is unsafe! ", "image", rKey)
-		}
-
-		// TODO: add support for multi-arch images
 		var digest string
-		manifest, err := rc.ManifestGet(req.Context(), image)
-		if err != nil {
-			utils.SendResponse(nil, fmt.Sprintf("unable to get manifest for image %s: %v", rKey, err), w)
-			continue
-		}
-		if manifest.IsList() {
-			klog.Info("Multi-platform image detected, looking up digest for current platform")
-			plat := platform.Platform{
-				Architecture: runtime.GOARCH,
-				OS:           runtime.GOOS,
-			}
-
-			desc, err := rcManifest.GetPlatformDesc(manifest, &plat)
-			if err != nil {
-				utils.SendResponse(nil, fmt.Sprintf("unable to get platform description for image %s: %v", rKey, err), w)
-				continue
-			}
-
-			digest = desc.Digest.String()
+		if image.Digest != "" {
+			digest = image.Digest
+			digest = strings.TrimPrefix(digest, "sha256:")
 		} else {
-			config, err := manifest.(rcManifest.Imager).GetConfig()
+			klog.Warning("Image with tag was used, this is unsafe! ", "image", rKey)
+
+			// TODO: add support for multi-arch images
+			var digest string
+			manifest, err := rc.ManifestGet(req.Context(), image)
 			if err != nil {
-				utils.SendResponse(nil, fmt.Sprintf("unable to get config digest for image %s: %v", rKey, err), w)
+				utils.SendResponse(nil, fmt.Sprintf("unable to get manifest for image %s: %v", rKey, err), w)
 				continue
 			}
-			klog.Info("Using config digest")
-			digest = config.Digest.String()
-		}
+			if manifest.IsList() {
+				klog.Info("Multi-platform image detected, looking up digest for current platform")
+				plat := platform.Platform{
+					Architecture: runtime.GOARCH,
+					OS:           runtime.GOOS,
+				}
 
-		digest = strings.TrimPrefix(digest, "sha256:")
-		klog.Info("Using resolved digest ", "digest", digest)
+				desc, err := rcManifest.GetPlatformDesc(manifest, &plat)
+				if err != nil {
+					utils.SendResponse(nil, fmt.Sprintf("unable to get platform description for image %s: %v", rKey, err), w)
+					continue
+				}
+
+				digest = desc.Digest.String()
+			} else {
+				config, err := manifest.(rcManifest.Imager).GetConfig()
+				if err != nil {
+					utils.SendResponse(nil, fmt.Sprintf("unable to get config digest for image %s: %v", rKey, err), w)
+					continue
+				}
+				klog.Info("Using config digest")
+				digest = config.Digest.String()
+			}
+
+			digest = strings.TrimPrefix(digest, "sha256:")
+			klog.Info("Using resolved digest ", "digest", digest)
+		}
 
 		// Do verify
 		results := shareddata.UsePoliciesAndPublicKeys(func(policies map[string]dsse.Envelope, keys map[string]policy.PublicKey) (results *[]externaldata.Item) {
@@ -138,11 +145,24 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 					continue
 				}
 
-				// create a reader from the pem encoded public key
-				keyReader := bytes.NewReader(key.Key)
-				verifier, err := cryptoutil.NewVerifierFromReader(keyReader)
-				if err != nil {
-					klog.Error(err, "failed to create verifier")
+				klog.Info("Using KeyID", "key", key.KeyID)
+				var verifier cryptoutil.Verifier
+				if strings.Contains(key.KeyID, "kms://") {
+					klog.Info("Using KMS signer provider", "key", key.KeyID)
+					k := &kms.KMSSignerProvider{
+						Reference: key.KeyID,
+						HashFunc:  crypto.SHA256,
+						Options:   kms.ProviderOptions(),
+					}
+
+					verifier, err = k.Verifier(req.Context())
+				} else {
+					// create a reader from the pem encoded public key
+					keyReader := bytes.NewReader(key.Key)
+					verifier, err = cryptoutil.NewVerifierFromReader(keyReader)
+					if err != nil {
+						klog.Error(err, "failed to create verifier")
+					}
 				}
 
 				subject := cryptoutil.DigestSet{cryptoutil.DigestValue{Hash: crypto.SHA256, GitOID: false}: digest}
@@ -153,8 +173,8 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 
 				collectionSource = source.NewMultiSource(memSource, source.NewArchvistSource(vh.archivista))
 
+				fmt.Printf("Verifying with key %s\n", key.KeyID)
 				fmt.Printf("Verifying policy %s\n", policyName)
-				fmt.Printf("Verifying policy %v\n", policyEnv)
 				fmt.Printf("Verifying subjects %s\n", digest)
 				fmt.Printf("Verifying collection source %v\n", collectionSource)
 				fmt.Printf("Verifying archivista %v\n", *vh.archivista)
@@ -172,34 +192,46 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 				)
 				if err != nil {
 					klog.Error(err, "failed to verify policy", "name", policyName)
-					policyResults = append(policyResults, externaldata.Item{
-						Key:   rKey,
-						Error: "Policy verification failed: " + err.Error(),
-					})
-					continue
-				}
-
-				klog.Info("Verification succeeded")
-				klog.Info("Evidence:")
-				num := 0
-				var uris []string
-				for _, stepEvidence := range verifiedEvidence {
-					for i := range stepEvidence {
-						klog.Info(fmt.Sprintf("%d: %s", num, stepEvidence[i].Reference))
-						uris = append(uris, stepEvidence[i].Reference)
-						num++
+					if policyErr, ok := err.(policy.ErrPolicyDenied); ok {
+						policyResults = append(policyResults, externaldata.Item{
+							Key: rKey,
+							Value: map[string]string{
+								"PolicyName": policyName,
+								"ImageID":    digest,
+								"Passed":     strconv.FormatBool(false),
+								"Reasons":    strings.Join(policyErr.Reasons, "\n"),
+							},
+						})
+					} else {
+						policyResults = append(policyResults, externaldata.Item{
+							Key:   rKey,
+							Error: "Policy verification failed: " + err.Error(),
+						})
 					}
-				}
+					return &policyResults
+				} else {
+					klog.Info("Verification succeeded")
+					klog.Info("Evidence:")
+					num := 0
+					var uris []string
+					for _, stepEvidence := range verifiedEvidence {
+						for i := range stepEvidence {
+							klog.Info(fmt.Sprintf("%d: %s", num, stepEvidence[i].Reference))
+							uris = append(uris, stepEvidence[i].Reference)
+							num++
+						}
+					}
 
-				policyResults = append(policyResults, externaldata.Item{
-					Key: rKey,
-					Value: map[string]string{
-						"PolicyName": policyName,
-						"ImageID":    digest,
-						"URIs":       strings.Join(uris, ""),
-						"Passed":     strconv.FormatBool(true),
-					},
-				})
+					policyResults = append(policyResults, externaldata.Item{
+						Key: rKey,
+						Value: map[string]string{
+							"PolicyName": policyName,
+							"ImageID":    digest,
+							"URIs":       strings.Join(uris, ""),
+							"Passed":     strconv.FormatBool(true),
+						},
+					})
+				}
 			}
 
 			return &policyResults

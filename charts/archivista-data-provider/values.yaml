@@ -1,5 +1,6 @@
 certDir: /certs
 clientCAFile: /tmp/gatekeeper/ca.crt
+image: localhost:5000/archivista-provider:latest
 port: 8090
 provider:
   # TODO: Fix timeout

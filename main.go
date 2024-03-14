@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/in-toto/go-witness/archivista"
 	"github.com/testifysec/archivista-data-provider/pkg/handler"
 	"github.com/testifysec/archivista-data-provider/pkg/manager"
-	"github.com/testifysec/go-witness/archivista"
 
 	"k8s.io/klog/v2"
 )

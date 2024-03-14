@@ -73,7 +73,9 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: manifests generate fmt vet build
 build: ## Local go build.
-	go build -o bin/provider main.go
+	GOOS=linux go build -o provider .
+	docker build -f Dockerfile . -t localhost:5000/archivista-provider:latest
+	docker push localhost:5000/archivista-provider:latest
 
 # lint runs a dockerized golangci-lint, and should give consistent results
 # across systems.

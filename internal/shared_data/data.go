@@ -4,9 +4,9 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/in-toto/go-witness/dsse"
+	"github.com/in-toto/go-witness/policy"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
-	"github.com/testifysec/go-witness/dsse"
-	"github.com/testifysec/go-witness/policy"
 )
 
 var (
