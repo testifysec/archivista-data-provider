@@ -29,7 +29,7 @@ jobs:
           egress-policy: audit
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.0.0
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.0.0
 
       - name: Set up Go 1.21
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
@@ -60,7 +60,7 @@ jobs:
           go-version: 1.21
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.0.0
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.0.0
 
       - name: Bootstrap e2e
         env:
