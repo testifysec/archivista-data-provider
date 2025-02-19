@@ -106,13 +106,18 @@ func (vh ValidateHandler) Handler(w http.ResponseWriter, req *http.Request) {
 
 			digest = desc.Digest.String()
 		} else {
-			config, err := manifest.(rcManifest.Imager).GetConfig()
-			if err != nil {
+			if imager, ok := manifest.(rcManifest.Imager); ok {
+				config, err := imager.GetConfig()
+				if err != nil {
+					utils.SendResponse(nil, fmt.Sprintf("unable to get config digest for image %s: %v", rKey, err), w)
+					continue
+				}
+				klog.Info("Using config digest")
+				digest = config.Digest.String()
+			} else {
 				utils.SendResponse(nil, fmt.Sprintf("unable to get config digest for image %s: %v", rKey, err), w)
 				continue
 			}
-			klog.Info("Using config digest")
-			digest = config.Digest.String()
 		}
 
 		digest = strings.TrimPrefix(digest, "sha256:")

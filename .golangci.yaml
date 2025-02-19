@@ -13,9 +13,6 @@ linters-settings:
 
   misspell:
     locale: US
-  staticcheck:
-    # Select the Go version to target. The default is '1.13'.
-    go: "1.21"
 
   revive:
     enable-all-rules: true
@@ -51,7 +48,7 @@ linters:
   disable-all: true
   enable:
     - errcheck
-    - exportloopref
+    - copyloopvar
     - forcetypeassert
     - gocritic
     - goconst

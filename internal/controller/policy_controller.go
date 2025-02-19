@@ -125,7 +125,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Applied state - make sure it is in shared_data.
 	if policy.Status.State == witnessv1alpha1.AppliedPolicy {
-		if err := shareddata.UsePolicy(policy.Name, func(p dsse.Envelope) {
+		if err := shareddata.UsePolicy(policy.Name, func(_ dsse.Envelope) {
 		}); err != nil {
 			// Policy not found in shared_data, retry.
 			policy.Status.State = witnessv1alpha1.PendingPolicy

@@ -98,7 +98,7 @@ func (r *PolicyPublicKeyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Applied state - make sure it is in shared_data.
 	if publickey.Status.State == witnessv1alpha1.AppliedPublickey {
-		if err := shareddata.UsePublicKey(pk.KeyID, func(pk policy.PublicKey) {
+		if err := shareddata.UsePublicKey(pk.KeyID, func(_ policy.PublicKey) {
 		}); err != nil {
 			// Publickey not found in shared_data, retry.
 			publickey.Status.State = witnessv1alpha1.PendingPublickey
