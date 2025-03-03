@@ -5,7 +5,7 @@ go 1.22.8
 toolchain go1.24.0
 
 require (
-	github.com/onsi/ginkgo/v2 v2.20.1
+	github.com/onsi/ginkgo/v2 v2.20.2
 	github.com/onsi/gomega v1.34.2
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20221214024800-b745745c4118
 	github.com/sirupsen/logrus v1.9.3
