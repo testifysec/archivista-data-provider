@@ -10,7 +10,7 @@ require (
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20221214024800-b745745c4118
 	github.com/sirupsen/logrus v1.9.3
 	github.com/testifysec/go-witness v0.1.13
-	k8s.io/apimachinery v0.30.10
+	k8s.io/apimachinery v0.30.12
 	k8s.io/client-go v0.28.15
 	k8s.io/klog/v2 v2.120.1
 	sigs.k8s.io/controller-runtime v0.16.6
